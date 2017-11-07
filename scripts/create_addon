@@ -1,0 +1,118 @@
+#!/bin/bash
+
+################################################################################
+#      This file is part of OpenELEC - http://www.openelec.tv
+#      Copyright (C) 2009-2016 Stephan Raue (stephan@openelec.tv)
+#
+#  OpenELEC is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  OpenELEC is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with OpenELEC.  If not, see <http://www.gnu.org/licenses/>.
+################################################################################
+
+. config/options $1
+
+if [ -z "$1" ]; then
+  echo "usage: $0 package_name"
+  exit 1
+fi
+
+if [ -n "$PKG_ARCH" -a ! "$PKG_ARCH" = "any" ]; then
+  echo "$PKG_ARCH" | grep -q "$TARGET_ARCH" || exit 0
+  echo "$PKG_ARCH" | grep -q "\-$TARGET_ARCH" && exit 0
+fi
+
+if [ -n "$PKG_ADDON_PROJECTS" -a ! "$PKG_ADDON_PROJECTS" = "any" ]; then
+  for _PROJECT in $PKG_ADDON_PROJECTS ; do
+    if [ "$_PROJECT" = "$PROJECT" ] ; then
+      PROJECT_SUPPORTED="yes"
+    fi
+  done
+  if [ ! "$PROJECT_SUPPORTED" = "yes" ] ; then
+    echo "*** ERROR: $PKG_ADDON_ID: '$PROJECT' not supported ***"
+    exit 0
+  fi
+fi
+
+$SCRIPTS/checkdeps
+
+pack_addon() {
+  scripts/install_addon $PKG_NAME $PKG_ADDON_ID || exit
+
+  if [ "$2" != "-test" ] ; then
+    ADDON_INSTALL_DIR="$TARGET/$ADDONS/$ADDON_VERSION/${DEVICE:-$PROJECT}/$TARGET_ARCH/$PKG_ADDON_ID"
+    ADDONVER="$(xmlstarlet sel -t -v "/addon/@version" $ADDON_BUILD/$PKG_ADDON_ID/addon.xml)"
+
+    if [ -f $ADDON_INSTALL_DIR/$PKG_ADDON_ID-$ADDONVER.zip ] ; then
+      echo "*** WARNING: $PKG_ADDON_ID-$ADDONVER.zip already exists. not overwriting it ***"
+      return 0
+    fi
+    cd $ADDON_BUILD
+    echo "*** compressing Addon $PKG_ADDON_ID ... ***"
+    $TOOLCHAIN/bin/7za a -l -mx9 -bsp0 -bso0 -tzip $PKG_ADDON_ID-$ADDONVER.zip $PKG_ADDON_ID
+    cd - &>/dev/null
+
+    mkdir -p $ADDON_INSTALL_DIR
+    cp $ADDON_BUILD/$PKG_ADDON_ID-$ADDONVER.zip $ADDON_INSTALL_DIR
+    if [ -f $ADDON_BUILD/$PKG_ADDON_ID/changelog.txt ]; then
+      cp $ADDON_BUILD/$PKG_ADDON_ID/changelog.txt $ADDON_INSTALL_DIR/changelog-$ADDONVER.txt
+    fi
+    if [ -f $ADDON_BUILD/$PKG_ADDON_ID/resources/icon.png ]; then
+      mkdir -p $ADDON_INSTALL_DIR/resources
+      cp $ADDON_BUILD/$PKG_ADDON_ID/resources/icon.png $ADDON_INSTALL_DIR/resources/icon.png
+    fi
+
+    # workaround for kodi pvr addons
+    if [ -f $ADDON_BUILD/$PKG_ADDON_ID/icon.png ]; then
+      cp $ADDON_BUILD/$PKG_ADDON_ID/icon.png $ADDON_INSTALL_DIR/icon.png
+    fi
+
+    if [ -f $ADDON_BUILD/$PKG_ADDON_ID/resources/fanart.png ]; then
+      mkdir -p $ADDON_INSTALL_DIR/resources
+      cp $ADDON_BUILD/$PKG_ADDON_ID/resources/fanart.png $ADDON_INSTALL_DIR/resources/fanart.png
+    fi
+    for f in $ADDON_BUILD/$PKG_ADDON_ID/resources/screenshot-*.{jpg,png}; do
+      if [ -f "$f" ]; then
+        mkdir -p $ADDON_INSTALL_DIR/resources
+        cp $f $ADDON_INSTALL_DIR/resources
+      fi
+    done
+  fi
+}
+
+if [ "$PKG_IS_ADDON" = "yes" ] ; then
+  setup_toolchain $TARGET
+
+  $SCRIPTS/build $@
+
+  printf  "%${BUILD_INDENT}c CREATE ADDON  (${DEVICE:-$PROJECT}/$TARGET_ARCH) $1\n" ' '>&$SILENT_OUT
+  export BUILD_INDENT=$((${BUILD_INDENT:-1}+$BUILD_INDENT_SIZE))
+
+  rm -rf $ADDON_BUILD
+
+  if [ "$(type -t addon)" = "function" ]; then
+    addon
+  else
+    install_binary_addon $PKG_ADDON_ID
+  fi
+
+  # HACK for packages that provide multiple addons like screensavers.rsxs
+  # addon's addon() in package.mk should take care for exporting
+  # MULTI_ADDONS="addon.boo1 addon.boo2 addon.boo3"
+  if [ -n "$MULTI_ADDONS" ] ; then
+    for _ADDON in $MULTI_ADDONS ; do
+      PKG_ADDON_ID=$_ADDON
+      pack_addon
+    done
+  else
+    pack_addon
+  fi
+fi
