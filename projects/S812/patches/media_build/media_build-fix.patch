@@ -1,12 +1,3 @@
-diff --git a/backports/backports.txt b/backports/backports.txt
-index 19ce705..f621ad8 100644
---- a/backports/backports.txt
-+++ b/backports/backports.txt
-@@ -25,6 +25,7 @@ add api_version.patch
- add linux-062-imon_pad_ignore_diagonal.patch
- add linux-260-fix-for-kernel-4.11.patch
- add cxd2880-support.patch
-+add of_i2c.patch
 
  [4.10.255]
  add v4.10_sched_signal.patch
@@ -41,15 +32,10 @@ index aee654a..03e1882 100644
  #endif
  
  #ifdef NEED_GET_USER_PAGES_UNLOCKED
-diff --git a/v4l/versions.txt b/v4l/versions.txt
-index 0a84755..4bb122f 100644
---- a/v4l/versions.txt
-+++ b/v4l/versions.txt
-@@ -1,13 +1,11 @@
+
  # Use this for stuff for drivers that don't compile
  [9.255.255]
-+VIDEO_S5C73M3
-+DVB_CXD2880
+
  
  [4.7.0]
  # needs i2c_mux_alloc
@@ -58,13 +44,5 @@ index 0a84755..4bb122f 100644
 -[4.4.0]
 -# needs regmap_write_bits
 -DVB_CXD2820R
- 
- [4.2.0]
- # needs led_trigger_remove
-@@ -76,7 +77,6 @@ DVB_NETUP_UNIDVB
- [3.6.0]
- # needs include/linux/sizes.h
- VIDEO_M5MOLS
--VIDEO_S5C73M3
- # needs dma_mmap_coherent and sg_alloc_table_from_pages.
- VIDEOBUF2_DMA_CONTIG
+
+

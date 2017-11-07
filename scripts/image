@@ -234,6 +234,12 @@ for MOD in `find $INSTALL/usr/lib/kernel-overlays/ -type f -name "*.ko"`; do
   $STRIP --strip-debug $MOD
 done
 
+mkdir $INSTALL/var/lib
+cp -R $INSTALL/usr/lib/modules $INSTALL/var/lib/modules
+cp -R $INSTALL/usr/lib/firmware $INSTALL/var/lib/
+rm -R $INSTALL/usr/lib/firmware
+rm -R $INSTALL/usr/lib/modules
+
 # symlink overlayed modules to /usr/lib/modules
 ln -sT /var/lib/modules $INSTALL/usr/lib/modules
 
