@@ -17,8 +17,8 @@
 ################################################################################
 
 PKG_NAME="kodi"
-PKG_VERSION="055f6ee"
-PKG_SHA256="bbdca237bafcdcf28c0d4a3e6309ca616ab9ca4a35f3fcef5de8bac3ad2f6cc6"
+PKG_VERSION="28db1a8"
+PKG_SHA256="3e4818f9c06cb0bed97b59509fd7120b32809226f6d77c75b81aeb28e89d7f07"
 PKG_ARCH="any"
 PKG_LICENSE="GPL"
 PKG_SITE="http://www.kodi.tv"
@@ -35,7 +35,7 @@ get_graphicdrivers
 PKG_DEPENDS_TARGET="$PKG_DEPENDS_TARGET dbus"
 
 case $PROJECT in
-   S805|S812|S905|S912)
+  S805|S905|S912)
     PKG_PATCH_DIRS="amlogic-sX05"
     if [ "$TARGET_ARCH" = "arm" ]; then
       CFLAGS="$CFLAGS -mthumb"
@@ -202,10 +202,6 @@ if [ ! "$KODIPLAYER_DRIVER" = default ]; then
     KODI_PLAYER="-DCORE_PLATFORM_NAME=gbm"
     CFLAGS="$CFLAGS -DMESA_EGL_NO_X11_HEADERS"
     CXXFLAGS="$CXXFLAGS -DMESA_EGL_NO_X11_HEADERS"
-  elif [ "$KODIPLAYER_DRIVER" = libfslvpuwrap ]; then
-    KODI_PLAYER="-DCORE_PLATFORM_NAME=imx"
-    CFLAGS="$CFLAGS -DHAS_IMXVPU -DLINUX -DEGL_API_FB"
-    CXXFLAGS="$CXXFLAGS -DHAS_IMXVPU -DLINUX -DEGL_API_FB"
   elif [ "$KODIPLAYER_DRIVER" = libamcodec ]; then
     KODI_PLAYER="-DCORE_PLATFORM_NAME=aml"
   fi
@@ -235,6 +231,7 @@ PKG_CMAKE_OPTS_TARGET="-DNATIVEPREFIX=$TOOLCHAIN \
                        -DENABLE_EVENTCLIENTS=ON \
                        -DENABLE_LDGOLD=ON \
                        -DENABLE_DEBUGFISSION=OFF \
+                       -DENABLE_APP_AUTONAME=OFF \
                        $KODI_ARCH \
                        $KODI_NEON \
                        $KODI_VDPAU \
@@ -283,6 +280,7 @@ post_makeinstall_target() {
 
   mkdir -p $INSTALL/usr/sbin
     cp $PKG_DIR/scripts/service-addon-wrapper $INSTALL/usr/sbin
+    cp $PKG_DIR/scripts/getlibwidevine.sh $INSTALL/usr/sbin
 
   mkdir -p $INSTALL/usr/bin
     cp $PKG_DIR/scripts/cputemp $INSTALL/usr/bin
@@ -356,7 +354,7 @@ post_makeinstall_target() {
   debug_strip $INSTALL/usr/lib/kodi/kodi.bin
 
   case $PROJECT in
-    S805|S812|S905|S912)
+    S805|S905|S912)
       cp $PKG_DIR/scripts/aml-hdmimonitor.sh $INSTALL/usr/lib/kodi/aml-hdmimonitor.sh
       ;;
   esac
@@ -372,9 +370,10 @@ post_install() {
   enable_service kodi-waitonnetwork.service
   enable_service kodi.service
   enable_service kodi-lirc-suspend.service
+  enable_service getlibwidevine.service
 
   case $PROJECT in
-    S805|S812|S905|S912)
+    S805|S905|S912)
       enable_service kodi-aml-hdmimonitor.service
       ;;
   esac
