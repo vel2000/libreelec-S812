@@ -35,7 +35,7 @@ get_graphicdrivers
 PKG_DEPENDS_TARGET="$PKG_DEPENDS_TARGET dbus"
 
 case $PROJECT in
-  S805|S905|S912)
+  S805|S812|S905|S912)
     PKG_PATCH_DIRS="amlogic-sX05"
     if [ "$TARGET_ARCH" = "arm" ]; then
       CFLAGS="$CFLAGS -mthumb"
@@ -354,7 +354,7 @@ post_makeinstall_target() {
   debug_strip $INSTALL/usr/lib/kodi/kodi.bin
 
   case $PROJECT in
-    S805|S905|S912)
+    S805|S812|S905|S912)
       cp $PKG_DIR/scripts/aml-hdmimonitor.sh $INSTALL/usr/lib/kodi/aml-hdmimonitor.sh
       ;;
   esac
@@ -373,7 +373,7 @@ post_install() {
   enable_service getlibwidevine.service
 
   case $PROJECT in
-    S805|S905|S912)
+    S805|S812|S905|S912)
       enable_service kodi-aml-hdmimonitor.service
       ;;
   esac
